@@ -30,17 +30,32 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(benchmark Catch2)
 
-# Main executable (can target C++26 / latest independently)
-add_executable(Tachyon "src/main.cpp" "src/main.h")
-set_target_properties(Tachyon PROPERTIES CXX_STANDARD 23)
+# Gather all sources and modules automatically
+file(GLOB_RECURSE SRC_SOURCES CONFIGURE_DEPENDS "src/*.cpp")
+list(FILTER SRC_SOURCES EXCLUDE REGEX "src/main\\.cpp$")
+
+file(GLOB_RECURSE TOOL_SOURCES CONFIGURE_DEPENDS "tools/*.cpp")
+file(GLOB_RECURSE TOOL_MODULES CONFIGURE_DEPENDS "tools/*.ixx")
+file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS "test/*.cpp")
+file(GLOB_RECURSE BENCH_SOURCES CONFIGURE_DEPENDS "bench/*.cpp")
+
+# Shared core library (compiles src and tools once, exposes C++ modules)
+add_library(TachyonCore STATIC ${SRC_SOURCES} ${TOOL_SOURCES})
+if(TOOL_MODULES)
+    target_sources(TachyonCore PUBLIC FILE_SET CXX_MODULES FILES ${TOOL_MODULES})
+endif()
+
+# Main executable
+add_executable(Tachyon "src/main.cpp")
+target_link_libraries(Tachyon PRIVATE TachyonCore)
 
 # Benchmarks
-add_executable(TachyonBenchMark "bench/index.cpp")
-target_link_libraries(TachyonBenchMark PRIVATE benchmark::benchmark_main)
+add_executable(TachyonBenchMark ${BENCH_SOURCES})
+target_link_libraries(TachyonBenchMark PRIVATE TachyonCore benchmark::benchmark_main)
 
 # Tests
-add_executable(TachyonTests "test/index.cpp")
-target_link_libraries(TachyonTests PRIVATE Catch2::Catch2WithMain)
+add_executable(TachyonTests ${TEST_SOURCES})
+target_link_libraries(TachyonTests PRIVATE TachyonCore Catch2::Catch2WithMain)
 
 # Custom run commands
 add_custom_target(run-app

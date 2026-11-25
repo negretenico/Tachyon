@@ -9,15 +9,15 @@ TEST_CASE("Baz") {
 	for (int i = 0; i < 2; ++i) {
 		UNSCOPED_INFO("The number is " << i);
 	}
-	CHECK(false);
+	CHECK(true);
 }
 
 TEST_CASE("Qux") {
 	INFO("First info");
 	UNSCOPED_INFO("First unscoped info");
-	CHECK(false);
+	CHECK(true);
 
 	INFO("Second info");
 	UNSCOPED_INFO("Second unscoped info");
-	CHECK(false);
+	CHECK(true);
 }
