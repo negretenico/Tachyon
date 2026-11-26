@@ -33,6 +33,7 @@ FetchContent_MakeAvailable(benchmark Catch2)
 # Gather all sources and modules automatically
 file(GLOB_RECURSE SRC_SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 list(FILTER SRC_SOURCES EXCLUDE REGEX "src/main\\.cpp$")
+file(GLOB_RECURSE SRC_MODULES CONFIGURE_DEPENDS "src/*.ixx")
 
 file(GLOB_RECURSE TOOL_SOURCES CONFIGURE_DEPENDS "tools/*.cpp")
 file(GLOB_RECURSE TOOL_MODULES CONFIGURE_DEPENDS "tools/*.ixx")
@@ -41,11 +42,13 @@ file(GLOB_RECURSE BENCH_SOURCES CONFIGURE_DEPENDS "bench/*.cpp")
 
 # Shared core library (compiles src and tools once, exposes C++ modules)
 add_library(TachyonCore STATIC ${SRC_SOURCES} ${TOOL_SOURCES})
-if(TOOL_MODULES)
-    target_sources(TachyonCore PUBLIC FILE_SET CXX_MODULES FILES ${TOOL_MODULES})
+
+set(ALL_CORE_MODULES ${SRC_MODULES} ${TOOL_MODULES})
+if(ALL_CORE_MODULES)
+    target_sources(TachyonCore PUBLIC FILE_SET CXX_MODULES FILES ${ALL_CORE_MODULES})
 endif()
 
-# Main executable
+# Main executable (inherits Model and tool modules from TachyonCore)
 add_executable(Tachyon "src/main.cpp")
 target_link_libraries(Tachyon PRIVATE TachyonCore)
 
@@ -58,6 +61,16 @@ add_executable(TachyonTests ${TEST_SOURCES})
 target_link_libraries(TachyonTests PRIVATE TachyonCore Catch2::Catch2WithMain)
 
 # Custom run commands
+foreach(TARGET_NAME Tachyon TachyonTests)
+    add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:${TARGET_NAME}>/tools/tick_convertor"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/tools/tick_convertor/order.tick"
+            "$<TARGET_FILE_DIR:${TARGET_NAME}>/tools/tick_convertor/order.tick"
+        COMMENT "Copying orders.tick for ${TARGET_NAME}..."
+    )
+endforeach()
+
 add_custom_target(run-app
     COMMAND Tachyon
     DEPENDS Tachyon
@@ -71,10 +84,10 @@ add_custom_target(run-tests
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Running Catch2 tests..."
 )
-
+ 
 add_custom_target(run-benchmark
     COMMAND TachyonBenchMark
     DEPENDS TachyonBenchMark
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Running Google Benchmarks..."
-)
+) 
