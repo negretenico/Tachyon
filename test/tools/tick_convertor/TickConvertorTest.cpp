@@ -13,8 +13,9 @@ TEST_CASE("Should convert ticks to trades using #embedded") {
 };
 
 TEST_CASE("Should convert ticsk to trades using fstream") {
-	TickConvertor::ReadTicksUsingFStream();
-	CHECK(false);
+	auto trades = TickConvertor::ReadTicksUsingFStream();
+	REQUIRE(trades.has_value());
+	REQUIRE(!trades->empty());
 };
 
 TEST_CASE("Should read tick header") {

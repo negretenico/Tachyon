@@ -2,7 +2,7 @@ export module model;
 import std;
 export namespace Model {
 	struct  TickHeader {
-		char magic[5] = {}; // 4 butes
+		char magic[5] = {}; // we need to use 5 bytes for the null terminator
 		std::uint16_t  version;
 		std::uint64_t  count;
 	};

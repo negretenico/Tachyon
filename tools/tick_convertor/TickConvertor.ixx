@@ -7,6 +7,6 @@ export namespace TickConvertor {
 	// use it for benchmarking of our statgies 
 	Trades ReadTicksUsingWindowsAPI();
 	Trades ReadTicksUsingEmbedded();
-	Trades ReadTicksUsingFStream();
+	std::optional< Trades> ReadTicksUsingFStream();
 	std::optional< TickHeader> ReadTickHeader();
 }
